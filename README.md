@@ -62,6 +62,7 @@ To migrate the dots from the current dots directory to another:
 ```sh
 dotcat migrate ~/.dots
 ```
+<br>
 
 You can also check the help if you are feeling a bit lost:
 ```sh
