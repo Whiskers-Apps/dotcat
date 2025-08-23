@@ -64,6 +64,11 @@ dotcat migrate ~/.dots
 ```
 <br>
 
+To list the active dots:
+```sh
+dotcat list
+```
+
 You can also check the help if you are feeling a bit lost:
 ```sh
 dotcat help
