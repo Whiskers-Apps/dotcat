@@ -42,4 +42,7 @@ pub enum Commands {
         #[arg(help = "The new dots directory")]
         path: PathBuf,
     },
+
+    #[command(about = "List the active symlinks")]
+    List {},
 }
