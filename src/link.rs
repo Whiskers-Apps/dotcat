@@ -82,6 +82,18 @@ pub fn on_link_db() -> Result<(), Box<dyn Error>> {
     check_setup()?;
 
     for dot in get_dots_db()? {
+        println!("Linking {}", &dot.name);
+
+        let original_path = resolve_path(&dot.original_path)?;
+
+        if original_path.exists() {
+            if original_path.is_file() {
+                fs::remove_file(&original_path)?;
+            } else {
+                fs::remove_dir_all(&original_path)?;
+            }
+        }
+
         link_dot(&dot)?;
     }
 

@@ -1,6 +1,6 @@
 [package]
 name = "dotcat"
-version = "1.1.0"
+version = "1.1.1"
 edition = "2024"
 license = "MIT"
 description = "A simple tool to manage dotfiles on linux"
