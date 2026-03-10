@@ -104,5 +104,11 @@ pub fn link_dot(dot: &Dot) -> Result<(), Box<dyn Error>> {
     let original_path = resolve_path(&dot.original_path)?;
     let target_path = resolve_path(&dot.target_path)?;
 
+    if let Some(parent) = original_path.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(&parent)?;
+        }
+    }
+
     Ok(symlink(&target_path, &original_path)?)
 }
