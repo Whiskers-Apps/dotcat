@@ -1,6 +1,6 @@
 use std::{
     error::Error,
-    fs::{self, canonicalize},
+    fs::{self, canonicalize, remove_dir, remove_file},
     path::PathBuf,
     process::exit,
 };
@@ -10,7 +10,8 @@ use cli::Cli;
 
 use crate::{
     config::{
-        Dot, add_dot, decode_path, dot_exists, encode_path, get_config, remove_dot, write_config,
+        Dot, add_dot, assert_config, decode_path, dot_exists, encode_path, get_config, remove_dot,
+        write_config,
     },
     link::{link, unlink},
 };
@@ -45,6 +46,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Dots directory set to: {encoded_path}");
         }
         cli::Commands::MigrateDir { path } => {
+            assert_config(&config);
+
             let path = match canonicalize(&path) {
                 Ok(path) => path,
                 Err(_) => {
@@ -86,6 +89,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Migrated dots to {}", &encoded_path);
         }
         cli::Commands::Add { id, path } => {
+            assert_config(&config);
+
             let exists = dot_exists(&id);
 
             if exists {
@@ -135,6 +140,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Added [{id}]-[{}] to dots", &full_target_path.display());
         }
         cli::Commands::Remove { id } => {
+            assert_config(&config);
+
             if !dot_exists(&id) {
                 println!("Dot not found.");
                 exit(1);
@@ -160,6 +167,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Removed [{id}] from dots.");
         }
         cli::Commands::Rename { id, new_id } => {
+            assert_config(&config);
+
             if !dot_exists(&id) {
                 println!("Could not find dot with that id.");
                 exit(1);
@@ -235,14 +244,19 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Renamed {} to {}", &id, &new_id);
         }
         cli::Commands::LinkDots {} => {
+            assert_config(&config);
+
             for dot in config.dots {
                 let full_target_path = decode_path(&dot.target);
                 let full_source_path =
                     decode_path(&config.dots_dir.clone().unwrap()).join(&dot.source);
 
-                if !full_target_path.parent().unwrap().exists() {
-                    fs::create_dir_all(&full_target_path.parent().unwrap())
-                        .expect("Failed to create target parent directory.");
+                if full_target_path.exists() {
+                    if full_target_path.is_dir() {
+                        let _ = remove_dir(&full_target_path);
+                    } else {
+                        let _ = remove_file(&full_target_path);
+                    }
                 }
 
                 link(&full_source_path, &full_target_path);
@@ -251,6 +265,8 @@ fn main() -> Result<(), Box<dyn Error>> {
             println!("Linked all dots in the config.");
         }
         cli::Commands::UnlinkDots {} => {
+            assert_config(&config);
+
             for dot in config.dots {
                 let full_target_path = decode_path(&dot.target);
                 unlink(&full_target_path);

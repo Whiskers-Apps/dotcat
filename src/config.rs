@@ -1,6 +1,7 @@
 use std::{
     fs::{self, read},
     path::{Path, PathBuf},
+    process::exit,
 };
 
 use serde::{Deserialize, Serialize};
@@ -16,6 +17,13 @@ pub struct Dot {
     pub id: String,
     pub source: String,
     pub target: String,
+}
+
+pub fn assert_config(config: &Config) {
+    if config.dots_dir.is_none() {
+        println!("Dots directory not configured.");
+        exit(1);
+    }
 }
 
 pub fn encode_path(path: &Path) -> String {
