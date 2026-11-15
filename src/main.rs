@@ -7,6 +7,7 @@ use std::{
 
 use clap::Parser;
 use cli::Cli;
+use colorize::AnsiColor;
 
 use crate::{
     config::{
@@ -137,7 +138,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             link(&source_full_path, &full_target_path);
 
-            println!("Added [{id}]-[{}] to dots", &full_target_path.display());
+            println!(
+                "Added {} with path {}",
+                &id.bold(),
+                &full_target_path.display().to_string().bold()
+            );
         }
         cli::Commands::Remove { id } => {
             assert_config(&config);
