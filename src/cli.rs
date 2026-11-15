@@ -10,39 +10,44 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    #[command(about = "Set the directory where all the dots should be")]
-    Setup {
-        #[arg(help = "The folder where the dots should be")]
+    #[command(about = "Set the directory containing the dots")]
+    SetDir {
+        #[arg(help = "The directory path")]
         path: PathBuf,
     },
 
-    #[command(about = "Add a dot and symlink it")]
-    Link {
-        #[arg(help = "The directory/file to link")]
-        path: PathBuf,
-
-        #[arg(help = "The dot name. If not specified it will prompt one")]
-        name: Option<String>,
-    },
-
-    #[command(about = "Remove a dot and it's symlink")]
-    Unlink {
-        #[arg(help = "The dot name")]
-        name: String,
-    },
-
-    #[command(about = "Links all the dots in the dots database")]
-    LinkDB {},
-
-    #[command(about = "Unlinks all the dots in the dots database")]
-    UnlinkDB {},
-
-    #[command(about = "Migrate the dots to another location")]
-    Migrate {
-        #[arg(help = "The new dots directory")]
+    #[command(about = "Move the dots directory to another")]
+    MigrateDir {
+        #[arg(help = "The directory path")]
         path: PathBuf,
     },
 
-    #[command(about = "List the active symlinks")]
-    List {},
+    #[command(about = "Add a dot")]
+    Add {
+        #[arg(help = "The dot id")]
+        id: String,
+        #[arg(help = "The dot path")]
+        path: PathBuf,
+    },
+
+    #[command(about = "Remove a dot")]
+    Remove {
+        #[arg(help = "The dot id")]
+        id: String,
+    },
+
+    #[command(about = "Rename a dot")]
+    Rename {
+        #[arg(help = "The dot id")]
+        id: String,
+
+        #[arg(help = "The new dot id")]
+        new_id: String,
+    },
+
+    #[command(about = "Links all the dots in the config")]
+    LinkDots {},
+
+    #[command(about = "Unlinks all the dots in the config")]
+    UnlinkDots {},
 }

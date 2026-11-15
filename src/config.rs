@@ -1,38 +1,110 @@
-use std::{error::Error, fs, path::PathBuf, process::exit};
+use std::{
+    fs::{self, read},
+    path::{Path, PathBuf},
+};
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
-    pub configs_dir: PathBuf,
+    pub dots_dir: Option<String>,
+    pub dots: Vec<Dot>,
 }
 
-pub fn get_config_path() -> Result<PathBuf, Box<dyn Error>> {
-    Ok(dirs::config_dir()
-        .ok_or_else(|| "Failed to get config dir.".to_string())?
-        .join("dotcat.toml"))
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Dot {
+    pub id: String,
+    pub source: String,
+    pub target: String,
 }
 
-impl Config {
-    pub fn get() -> Config {
-        match parse_config() {
-            Ok(config) => config,
-            Err(_) => {
-                println!("Please setup the configs dir. You can use (--setup) to do that");
-                exit(1)
-            }
+pub fn encode_path(path: &Path) -> String {
+    let home_str = dirs::home_dir()
+        .expect("Failed to get home dir")
+        .display()
+        .to_string();
+
+    let path_str = path.display().to_string();
+
+    return path_str.replace(&home_str, "~");
+}
+
+pub fn decode_path(path: &str) -> PathBuf {
+    let home_str = dirs::home_dir()
+        .expect("Failed to get home dir")
+        .display()
+        .to_string();
+
+    let path_str = path.replace("~", &home_str);
+
+    return PathBuf::from(&path_str);
+}
+
+pub fn get_config() -> Config {
+    let config_path = dirs::config_dir()
+        .expect("Failed to get config directory")
+        .join("dotcat.json");
+
+    let empty_config = Config {
+        dots_dir: None,
+        dots: vec![],
+    };
+
+    if !config_path.exists() {
+        write_config(&empty_config);
+        return empty_config;
+    }
+
+    let bytes = match read(&config_path) {
+        Ok(bytes) => bytes,
+        Err(_) => {
+            log::warn!("Using default config since bytes couldn't be read");
+            return empty_config;
         }
-    }
+    };
 
-    pub fn save(&self) -> Result<(), Box<dyn Error>> {
-        let content = toml::to_string_pretty(self)?;
-        Ok(fs::write(&get_config_path()?, &content)?)
-    }
+    return match serde_json::from_slice(&bytes) {
+        Ok(config) => config,
+        Err(_) => empty_config,
+    };
 }
 
-pub fn parse_config() -> Result<Config, Box<dyn Error>> {
-    let bytes = fs::read(get_config_path()?)?;
-    let config: Config = toml::from_slice(&bytes)?;
+pub fn write_config(config: &Config) {
+    let config_path = dirs::config_dir()
+        .expect("Failed to get config directory")
+        .join("dotcat.json");
 
-    Ok(config)
+    let bytes = serde_json::to_vec_pretty(&config).expect("Failed to convert config to json");
+
+    fs::write(&config_path, &bytes).expect("Failed to write config");
+}
+
+pub fn dot_exists(id: &str) -> bool {
+    let dots = get_config().dots;
+    return dots.iter().any(|dot| dot.id == id);
+}
+
+pub fn add_dot(dot: &Dot) {
+    let mut config = get_config();
+    let mut dots = config.dots.clone();
+
+    dots.push(dot.to_owned());
+    config.dots = dots;
+
+    write_config(&config);
+}
+
+pub fn remove_dot(id: &str) {
+    let mut config = get_config();
+
+    let dots = config
+        .dots
+        .clone()
+        .into_iter()
+        .filter(|dot| dot.id != id)
+        .collect::<Vec<Dot>>();
+
+    config.dots = dots;
+
+    write_config(&config);
 }
